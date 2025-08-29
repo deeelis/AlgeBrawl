@@ -154,8 +154,8 @@ func (h *Handler) Statistics(c *gin.Context) {
     for _, ans := range req.Answers {
         answers = append(answers, models.Answer{
             EquationID: ans.EquationID,
-            UserAnswer1: ans.Root1,
-            UserAnswer2: ans.Root2,
+            Root1: ans.Root1,
+            Root2: ans.Root2,
         })
     }
 

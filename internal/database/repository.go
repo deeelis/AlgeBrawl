@@ -3,7 +3,7 @@ package database
 import (
     "database/sql"
     "fmt"
-    "log"
+    "math"
     "time"
 
     "algebrawl/internal/models"
@@ -26,6 +26,10 @@ func NewRepository(connStr string) (*Repository, error) {
     }
     
     return &Repository{db: db}, nil
+}
+
+func (r *Repository) Close() {
+    r.db.Close()
 }
 
 func (r *Repository) CreateUser(firstName, lastName, login string) (string, error) {
@@ -117,11 +121,11 @@ func (r *Repository) SaveAnswers(setID string, answers []models.Answer) error {
             return err
         }
 
-        correct := isAnswerCorrect(root1, root2, answer.UserAnswer1, answer.UserAnswer2)
+        correct := isAnswerCorrect(root1, root2, answer.Root1, answer.Root2)
         
         _, err = tx.Exec(
             "UPDATE equations SET user_answer1 = $1, user_answer2 = $2, solved_correctly = $3 WHERE set_id = $4 AND id = $5",
-            answer.UserAnswer1, answer.UserAnswer2, correct, setID, answer.EquationID,
+            answer.Root1, answer.Root2, correct, setID, answer.EquationID,
         )
         if err != nil {
             return err
@@ -132,9 +136,14 @@ func (r *Repository) SaveAnswers(setID string, answers []models.Answer) error {
 }
 
 func isAnswerCorrect(root1, root2, userAnswer1, userAnswer2 float64) bool {
-    // Проверяем оба варианта порядка корней
-    return (root1 == userAnswer1 && root2 == userAnswer2) ||
-           (root1 == userAnswer2 && root2 == userAnswer1)
+    // Проверяем оба варианта порядка корней с учетом погрешности
+    tolerance := 0.01
+    return (abs(root1-userAnswer1) < tolerance && abs(root2-userAnswer2) < tolerance) ||
+           (abs(root1-userAnswer2) < tolerance && abs(root2-userAnswer1) < tolerance)
+}
+
+func abs(x float64) float64 {
+    return math.Abs(x)
 }
 
 func (r *Repository) GetEquationResults(setID string) ([]models.EquationResult, error) {

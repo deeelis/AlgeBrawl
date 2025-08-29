@@ -17,7 +17,7 @@ func main() {
     if err != nil {
         log.Fatalf("Failed to connect to database: %v", err)
     }
-    defer repo.db.Close()
+    defer repo.Close()
 
     // Создание HTTP сервера
     router := gin.Default()
